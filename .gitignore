@@ -1,0 +1,46 @@
+# ==========================================
+# CodeIgniter / Smart School .gitignore
+# ==========================================
+
+# Environment & Sensitive files (Never commit secrets to GitHub)
+.env
+.env.*
+!.env.example
+
+# Ignore student documents, images, and user uploads
+# (Protects live student uploads and PDFs on cPanel from being overwritten)
+uploads/*
+!uploads/index.html
+application/uploads/*
+!application/uploads/index.html
+
+# Ignore log files (keeps live transaction logs private and prevents bloat)
+application/logs/*
+!application/logs/index.html
+logs/*
+!logs/index.html
+*.log
+log-*.php
+
+# Ignore cache
+application/cache/*
+!application/cache/index.html
+cache/*
+!cache/index.html
+
+# Ignore temporary/scratch files
+scratch/
+server_updated_files/
+*.tmp
+*.bak
+test_db*.php
+
+# OS & Editor generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
