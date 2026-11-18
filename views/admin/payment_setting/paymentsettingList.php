@@ -26,45 +26,37 @@
 
                     </div> 
 
+                    <?php
+                    $radio_check = check_selected($paymentlist);
+                    if (empty($radio_check) || $radio_check == 'none') {
+                        $active_tab = 'razorpay';
+                    } else {
+                        $active_tab = $radio_check;
+                    }
+                    ?>
+
                     <ul class="nav nav-tabs nav-tabs2">
-                        <li class="active"><a href="#tab_1" data-toggle="tab"><?php echo $this->lang->line('paypal');?></a></li>
-                        <li ><a href="#tab_16" data-toggle="tab">Atom</a></li>
-                        
-
-                        <li><a href="#tab_2" data-toggle="tab"><?php echo $this->lang->line('stripe');?></a></li>
-
-                        <li><a href="#tab_3" data-toggle="tab"><?php echo $this->lang->line('payu'); ?></a></li>
-
-                        <li><a href="#tab_4" data-toggle="tab"><?php echo $this->lang->line('ccavenue'); ?></a></li>
-
-                        <li><a href="#tab_5" data-toggle="tab"><?php echo $this->lang->line('instamojo'); ?></a></li>
-
-                        <li><a href="#tab_6" data-toggle="tab"><?php echo $this->lang->line('paystack'); ?></a></li>
-
-                        <li><a href="#tab_7" data-toggle="tab"><?php echo $this->lang->line('razorpay'); ?></a></li>
-
-                        <li><a href="#tab_8" data-toggle="tab"><?php echo $this->lang->line('paytm'); ?></a></li>
-
-                        <li><a href="#tab_9" data-toggle="tab"><?php echo $this->lang->line('midtrans'); ?></a></li>
-
-                        <li><a href="#tab_10" data-toggle="tab"><?php echo $this->lang->line('pesapal'); ?></a></li>
-
-                        <li><a href="#tab_11" data-toggle="tab"><?php echo $this->lang->line('flutter_wave'); ?> </a></li>
-
-                        <li><a href="#tab_12" data-toggle="tab"><?php echo $this->lang->line('ipay_africa'); ?></a></li>
-
-                        <li><a href="#tab_13" data-toggle="tab"><?php echo $this->lang->line('jazzcash'); ?></a></li>
-
-                        <li><a href="#tab_14" data-toggle="tab"><?php echo $this->lang->line('billplz'); ?></a></li>
-
-                        <li><a href="#tab_15" data-toggle="tab"><?php echo $this->lang->line('sslcommerz'); ?></a></li>
-
-
+                        <li class="<?php echo ($active_tab == 'razorpay') ? 'active' : ''; ?>"><a href="#tab_7" data-gateway="razorpay" data-toggle="tab"><i class="fa fa-credit-card text-success"></i> <?php echo $this->lang->line('razorpay'); ?></a></li>
+                        <li class="<?php echo ($active_tab == 'atom') ? 'active' : ''; ?>"><a href="#tab_16" data-gateway="atom" data-toggle="tab"><i class="fa fa-university text-info"></i> Atom</a></li>
+                        <li class="<?php echo ($active_tab == 'ccavenue') ? 'active' : ''; ?>"><a href="#tab_4" data-gateway="ccavenue" data-toggle="tab"><?php echo $this->lang->line('ccavenue'); ?></a></li>
+                        <li class="<?php echo ($active_tab == 'payu') ? 'active' : ''; ?>"><a href="#tab_3" data-gateway="payu" data-toggle="tab"><?php echo $this->lang->line('payu'); ?></a></li>
+                        <li class="<?php echo ($active_tab == 'paytm') ? 'active' : ''; ?>"><a href="#tab_8" data-gateway="paytm" data-toggle="tab"><?php echo $this->lang->line('paytm'); ?></a></li>
+                        <li class="<?php echo ($active_tab == 'paypal') ? 'active' : ''; ?>"><a href="#tab_1" data-gateway="paypal" data-toggle="tab"><?php echo $this->lang->line('paypal');?></a></li>
+                        <li class="<?php echo ($active_tab == 'stripe') ? 'active' : ''; ?>"><a href="#tab_2" data-gateway="stripe" data-toggle="tab"><?php echo $this->lang->line('stripe');?></a></li>
+                        <li class="<?php echo ($active_tab == 'instamojo') ? 'active' : ''; ?>"><a href="#tab_5" data-gateway="instamojo" data-toggle="tab"><?php echo $this->lang->line('instamojo'); ?></a></li>
+                        <li class="<?php echo ($active_tab == 'paystack') ? 'active' : ''; ?>"><a href="#tab_6" data-gateway="paystack" data-toggle="tab"><?php echo $this->lang->line('paystack'); ?></a></li>
+                        <li class="<?php echo ($active_tab == 'midtrans') ? 'active' : ''; ?>"><a href="#tab_9" data-gateway="midtrans" data-toggle="tab"><?php echo $this->lang->line('midtrans'); ?></a></li>
+                        <li class="<?php echo ($active_tab == 'pesapal') ? 'active' : ''; ?>"><a href="#tab_10" data-gateway="pesapal" data-toggle="tab"><?php echo $this->lang->line('pesapal'); ?></a></li>
+                        <li class="<?php echo ($active_tab == 'flutterwave') ? 'active' : ''; ?>"><a href="#tab_11" data-gateway="flutterwave" data-toggle="tab"><?php echo $this->lang->line('flutter_wave'); ?> </a></li>
+                        <li class="<?php echo ($active_tab == 'ipayafrica') ? 'active' : ''; ?>"><a href="#tab_12" data-gateway="ipayafrica" data-toggle="tab"><?php echo $this->lang->line('ipay_africa'); ?></a></li>
+                        <li class="<?php echo ($active_tab == 'jazzcash') ? 'active' : ''; ?>"><a href="#tab_13" data-gateway="jazzcash" data-toggle="tab"><?php echo $this->lang->line('jazzcash'); ?></a></li>
+                        <li class="<?php echo ($active_tab == 'billplz') ? 'active' : ''; ?>"><a href="#tab_14" data-gateway="billplz" data-toggle="tab"><?php echo $this->lang->line('billplz'); ?></a></li>
+                        <li class="<?php echo ($active_tab == 'sslcommerz') ? 'active' : ''; ?>"><a href="#tab_15" data-gateway="sslcommerz" data-toggle="tab"><?php echo $this->lang->line('sslcommerz'); ?></a></li>
                     </ul> 
 
                     <div class="tab-content pb0">
 
-                        <div class="tab-pane active" id="tab_1">
+                        <div class="tab-pane <?php echo ($active_tab == 'paypal') ? 'active' : ''; ?>" id="tab_1">
 
                             <form role="form" id="paypal" action="<?php echo site_url('admin/paymentsettings/paypal') ?>" class="form-horizontal" method="post">
 
@@ -672,7 +664,7 @@
 
 
 
-                        <div class="tab-pane " id="tab_7">
+                        <div class="tab-pane <?php echo ($active_tab == 'razorpay') ? 'active' : ''; ?>" id="tab_7">
 
                             <form role="form" id="razorpay" action="<?php echo site_url('admin/paymentsettings/razorpay') ?>" class="form-horizontal" method="post">
 
@@ -1562,7 +1554,7 @@
 
                         </div>
 
-                         <div class="tab-pane " id="tab_16">
+                         <div class="tab-pane <?php echo ($active_tab == 'atom') ? 'active' : ''; ?>" id="tab_16">
 
                            <form role="form" id="atom" action="<?php echo site_url('admin/paymentsettings/atom') ?>" class="form-horizontal" method="post">
 
@@ -3300,6 +3292,58 @@ function check_in_array($find, $array) {
 
         e.preventDefault();
 
+    });
+
+    // Sync sidebar radio selection with credential tabs
+    $('input[type=radio][name=payment_setting]').on('change', function () {
+        var selected = $(this).val();
+        var tabMap = {
+            'razorpay': '#tab_7',
+            'atom': '#tab_16',
+            'ccavenue': '#tab_4',
+            'payu': '#tab_3',
+            'paytm': '#tab_8',
+            'paypal': '#tab_1',
+            'stripe': '#tab_2',
+            'instamojo': '#tab_5',
+            'paystack': '#tab_6',
+            'midtrans': '#tab_9',
+            'pesapal': '#tab_10',
+            'flutterwave': '#tab_11',
+            'ipayafrica': '#tab_12',
+            'jazzcash': '#tab_13',
+            'billplz': '#tab_14',
+            'sslcommerz': '#tab_15'
+        };
+        if (tabMap[selected]) {
+            $('.nav-tabs a[href="' + tabMap[selected] + '"]').tab('show');
+        }
+    });
+
+    // Also sync clicking tabs to radio buttons
+    $('.nav-tabs a').on('shown.bs.tab', function (e) {
+        var href = $(e.target).attr('href');
+        var reverseMap = {
+            '#tab_7': 'razorpay',
+            '#tab_16': 'atom',
+            '#tab_4': 'ccavenue',
+            '#tab_3': 'payu',
+            '#tab_8': 'paytm',
+            '#tab_1': 'paypal',
+            '#tab_2': 'stripe',
+            '#tab_5': 'instamojo',
+            '#tab_6': 'paystack',
+            '#tab_9': 'midtrans',
+            '#tab_10': 'pesapal',
+            '#tab_11': 'flutterwave',
+            '#tab_12': 'ipayafrica',
+            '#tab_13': 'jazzcash',
+            '#tab_14': 'billplz',
+            '#tab_15': 'sslcommerz'
+        };
+        if (reverseMap[href]) {
+            $('input[type=radio][name=payment_setting][value="' + reverseMap[href] + '"]').prop('checked', true);
+        }
     });
 
 </script>
