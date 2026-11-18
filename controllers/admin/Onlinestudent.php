@@ -478,9 +478,17 @@ $admission_date = !empty($value->created_at) ? date($this->customlib->getSchoolD
                     $row[] = '<span class="label label-danger">' . $this->lang->line('not_submitted') . '</span>';
                 }
 
+                $paybtn = "";
+                if (!empty($value->admission_txn_id)) {
+                    $paybtn = "<a data-placement='left' href='javascript:void(0)' onclick='viewAdmissionPayment(" . $value->id . ")' class='btn btn-default btn-xs mt-5 pull-right' data-toggle='tooltip' title='View Payment Details (" . htmlspecialchars($value->admission_txn_id) . ")'><i class='fa fa-credit-card text-green'></i></a>";
+                }
+
                 if ($sch_setting->online_admission_payment == 'yes') {
                     if ($value->paid_status == 1) {
-                        $row[] = '<span class="label label-success">' . $this->lang->line('paid') . '</span>';
+                        $txn_info = !empty($value->admission_txn_id) ? '<br><small class="text-muted" title="' . htmlspecialchars($value->admission_txn_id) . '"><i class="fa fa-credit-card"></i> ' . htmlspecialchars(substr($value->admission_txn_id, 0, 16)) . '...</small>' : '';
+                        $row[] = '<span class="label label-success">' . $this->lang->line('paid') . '</span>' . $txn_info;
+                    } else if (!empty($value->admission_txn_id)) {
+                        $row[] = '<span class="label label-warning" title="Payment recorded in DB: ' . htmlspecialchars($value->admission_txn_id) . '">Paid (Unsynced)</span><br><a href="javascript:void(0)" onclick="syncAdmissionPayment(' . $value->id . ')" class="btn btn-xs btn-info mt-5" title="Click to sync status to Paid"><i class="fa fa-refresh"></i> Sync</a>';
                     } else {
                         $row[] = '<span class="label label-danger">' . $this->lang->line('unpaid') . '</span>';
                     }
@@ -488,7 +496,7 @@ $admission_date = !empty($value->created_at) ? date($this->customlib->getSchoolD
                 }
 
                 $row[]     = $enroll;
-                $row[]     = $document . ' ' . $printbtn . ' ' . $editbtn . ' ' . $deletebtn;
+                $row[]     = $document . ' ' . $printbtn . ' ' . $paybtn . ' ' . $editbtn . ' ' . $deletebtn;
                 $dt_data[] = $row;
             }
         }
@@ -527,6 +535,33 @@ $admission_date = !empty($value->created_at) ? date($this->customlib->getSchoolD
         }
 
         echo $message;
+    }
+
+    public function getpaymentdetails()
+    {
+        $id = $this->input->post('id') ? $this->input->post('id') : $this->input->get('id');
+        $this->load->model('paymenttransaction_model');
+        $data = $this->paymenttransaction_model->getAdmissionPaymentById($id);
+        echo json_encode(array('status' => !empty($data) ? 'success' : 'fail', 'data' => $data));
+    }
+
+    public function syncpayment()
+    {
+        $id = $this->input->post('id');
+        $this->load->model('paymenttransaction_model');
+        $res = $this->paymenttransaction_model->syncAdmissionPayment($id);
+        if ($res) {
+            echo json_encode(array('status' => 'success', 'message' => 'Student payment status successfully synced to Paid!'));
+        } else {
+            echo json_encode(array('status' => 'fail', 'message' => 'No payment record found.'));
+        }
+    }
+
+    public function syncallpayments()
+    {
+        $this->load->model('paymenttransaction_model');
+        $count = $this->paymenttransaction_model->syncAllUnsyncedAdmissions();
+        echo json_encode(array('status' => 'success', 'count' => $count, 'message' => "Successfully synced {$count} student payment records!"));
     }
 
 }

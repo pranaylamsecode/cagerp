@@ -282,6 +282,7 @@
 
 
                                     <li style="" class="<?php echo set_Submenu('onlinestudent'); ?>"><a href="<?php echo site_url('admin/onlinestudent'); ?>"><i class="fa fa-angle-double-right"></i> <?php echo $this->lang->line('online') . " " . $this->lang->line('admission'); ?></a></li>
+                                    <li style="" class="<?php echo set_Submenu('admin/paymenttransactions'); ?>"><a href="<?php echo site_url('admin/paymenttransactions'); ?>"><i class="fa fa-angle-double-right"></i> <?php echo 'Online Transactions'; ?></a></li>
 
 
 
@@ -444,6 +445,7 @@
                             ?>
 
                                 <li style="display:none;" class="<?php echo set_Submenu('studentfee/searchpayment'); ?>"><a href="<?php echo base_url(); ?>studentfee/searchpayment"><i class="fa fa-angle-double-right"></i> <?php echo $this->lang->line('search_fees_payment'); ?></a></li>
+                                <li class="<?php echo set_Submenu('admin/paymenttransactions'); ?>"><a href="<?php echo site_url('admin/paymenttransactions'); ?>"><i class="fa fa-angle-double-right"></i> Online Payment Tracking</a></li>
 
                             <?php
 
