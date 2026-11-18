@@ -6,6 +6,8 @@ if (!defined('BASEPATH')) {
 
 class Paymenttransactions extends Admin_Controller
 {
+    public $sch_setting_detail = array();
+
     public function __construct()
     {
         parent::__construct();
@@ -18,8 +20,8 @@ class Paymenttransactions extends Admin_Controller
     public function index()
     {
         if (!$this->rbac->hasPrivilege('online_admission', 'can_view') && !$this->rbac->hasPrivilege('collect_fees', 'can_view')) {
-            // Allow if admin role exists
-            if (!isset($this->session->userdata['admin'])) {
+            $admin = $this->session->userdata('admin');
+            if (empty($admin)) {
                 access_denied();
             }
         }
@@ -41,14 +43,33 @@ class Paymenttransactions extends Admin_Controller
         $data['date_to']     = $date_to;
         $data['status']      = $status;
 
-        // Summary Stats
-        $data['stats'] = $this->paymenttransaction_model->getSummaryStats();
+        // Default empty state in case of any query error
+        $data['stats'] = array(
+            'admission_count'     => 0,
+            'admission_amount'    => 0,
+            'unsynced_count'      => 0,
+            'atom_total_count'    => 0,
+            'atom_total_amount'   => 0,
+            'atom_success_count'  => 0,
+            'atom_failed_count'   => 0,
+            'atom_cancelled_count'=> 0,
+            'enquiry_count'       => 0,
+            'enquiry_amount'      => 0,
+        );
+        $data['admission_payments'] = array();
+        $data['atom_transactions']  = array();
+        $data['fee_deposits']       = array();
+        $data['enquiry_payments']   = array();
 
-        // Load data based on active tab or preload for quick switching
-        $data['admission_payments'] = $this->paymenttransaction_model->getOnlineAdmissionPayments($search, $date_from, $date_to, $status);
-        $data['atom_transactions']  = $this->paymenttransaction_model->getAtomTransactions($search, $date_from, $date_to, $status);
-        $data['fee_deposits']       = $this->paymenttransaction_model->getOnlineFeeDeposits($search, $date_from, $date_to);
-        $data['enquiry_payments']   = $this->paymenttransaction_model->getEnquiryPayments($search, $date_from, $date_to);
+        try {
+            $data['stats']              = $this->paymenttransaction_model->getSummaryStats();
+            $data['admission_payments'] = $this->paymenttransaction_model->getOnlineAdmissionPayments($search, $date_from, $date_to, $status);
+            $data['atom_transactions']  = $this->paymenttransaction_model->getAtomTransactions($search, $date_from, $date_to, $status);
+            $data['fee_deposits']       = $this->paymenttransaction_model->getOnlineFeeDeposits($search, $date_from, $date_to);
+            $data['enquiry_payments']   = $this->paymenttransaction_model->getEnquiryPayments($search, $date_from, $date_to);
+        } catch (\Throwable $e) {
+            log_message('error', 'Paymenttransactions index error: ' . $e->getMessage());
+        }
 
         $this->load->view('layout/header', $data);
         $this->load->view('admin/paymenttransactions/index', $data);
@@ -132,6 +153,7 @@ class Paymenttransactions extends Admin_Controller
             fputcsv($output, array('ID', 'Ref No', 'Student Name', 'Class', 'Mobile', 'Email', 'Amount', 'Payment Mode', 'Transaction ID', 'Order ID', 'Date', 'Paid Status', 'Form Status'));
             $rows = $this->paymenttransaction_model->getOnlineAdmissionPayments();
             foreach ($rows as $r) {
+                $order_id = isset($r['order_id']) ? $r['order_id'] : '';
                 fputcsv($output, array(
                     $r['id'],
                     $r['reference_no'],
@@ -142,7 +164,7 @@ class Paymenttransactions extends Admin_Controller
                     $r['paid_amount'],
                     $r['payment_mode'],
                     $r['transaction_id'],
-                    $r['order_id'],
+                    $order_id,
                     $r['date'],
                     $r['paid_status'] == 1 ? 'Paid' : 'Unpaid',
                     $r['form_status'] == 1 ? 'Submitted' : 'Not Submitted'
@@ -153,16 +175,18 @@ class Paymenttransactions extends Admin_Controller
             $rows = $this->paymenttransaction_model->getAtomTransactions();
             foreach ($rows as $r) {
                 $status = !empty($r['response_status']) ? $r['response_status'] : ($r['amt'] > 0 ? 'SUCCESS' : 'FAILED');
+                $name = !empty($r['st_firstname']) ? ($r['st_firstname'] . ' ' . $r['st_lastname']) : (isset($r['udf1']) ? $r['udf1'] : '');
+                $phone = !empty($r['st_mobileno']) ? $r['st_mobileno'] : (isset($r['udf3']) ? $r['udf3'] : '');
                 fputcsv($output, array(
                     $r['trans_id'],
                     $r['date'],
-                    !empty($r['st_firstname']) ? $r['st_firstname'] . ' ' . $r['st_lastname'] : $r['udf1'],
-                    $r['udf3'],
+                    $name,
+                    $phone,
                     $r['student_id'],
                     $r['amt'],
                     $r['f_code'],
                     $status,
-                    $r['response_message'],
+                    isset($r['response_message']) ? $r['response_message'] : '',
                     $r['mmp_txn'],
                     $r['mer_txn'],
                     $r['bank_txn'],

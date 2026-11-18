@@ -14,10 +14,19 @@ class Paymenttransaction_model extends MY_Model
 
     /**
      * Get Online Admission Payments with student and class details
+     * Dynamic columns ensure 100% compatibility with untouched live DB schema.
      */
     public function getOnlineAdmissionPayments($search = null, $date_from = null, $date_to = null, $sync_status = null)
     {
-        $this->db->select('
+        $has_status   = $this->db->field_exists('status', 'online_admission_payment');
+        $has_order_id = $this->db->field_exists('order_id', 'online_admission_payment');
+        $has_raw      = $this->db->field_exists('raw_response', 'online_admission_payment');
+
+        $status_col = $has_status ? "p.status as payment_status" : "'success' as payment_status";
+        $order_col  = $has_order_id ? "p.order_id" : "'' as order_id";
+        $raw_col    = $has_raw ? "p.raw_response" : "'' as raw_response";
+
+        $this->db->select("
             p.id,
             p.admission_id,
             p.paid_amount,
@@ -26,9 +35,9 @@ class Paymenttransaction_model extends MY_Model
             p.transaction_id,
             p.note,
             p.date,
-            p.status as payment_status,
-            p.order_id,
-            p.raw_response,
+            {$status_col},
+            {$order_col},
+            {$raw_col},
             o.reference_no,
             o.firstname,
             o.lastname,
@@ -39,8 +48,8 @@ class Paymenttransaction_model extends MY_Model
             o.created_at as admission_date,
             c.class,
             s.section,
-            (CASE WHEN o.paid_status = 1 THEN "synced" ELSE "unsynced" END) AS sync_status
-        ');
+            (CASE WHEN o.paid_status = 1 THEN 'synced' ELSE 'unsynced' END) AS sync_status
+        ", false);
         $this->db->from('online_admission_payment p');
         $this->db->join('online_admissions o', 'o.id = p.admission_id', 'left');
         $this->db->join('class_sections cs', 'cs.id = o.class_section_id', 'left');
@@ -74,22 +83,37 @@ class Paymenttransaction_model extends MY_Model
 
         $this->db->order_by('p.id', 'DESC');
         $query = $this->db->get();
-        return $query->result_array();
+        return $query ? $query->result_array() : array();
     }
 
     /**
      * Get Atom / App transactions
+     * Dynamic columns ensure 100% compatibility with untouched live DB schema.
      */
     public function getAtomTransactions($search = null, $date_from = null, $date_to = null, $status = null)
     {
-        $this->db->select('
+        $has_atom_status = $this->db->field_exists('response_status', 'atom_transaction');
+        $has_atom_raw    = $this->db->field_exists('raw_response', 'atom_transaction');
+
+        $status_col = $has_atom_status 
+            ? 't.response_status' 
+            : '(CASE WHEN t.f_code IN ("OTS0000", "Ok") OR (t.amt > 0 AND (t.f_code NOT IN ("OTS0600", "F", "OTS0101") OR t.f_code IS NULL)) THEN "SUCCESS" WHEN t.f_code = "OTS0101" THEN "CANCELLED" ELSE "FAILED" END)';
+        $msg_col = $has_atom_status 
+            ? 't.response_message' 
+            : 'IFNULL(t.discriminator, "Processed by App")';
+        $raw_col = $has_atom_raw ? 't.raw_response' : "''";
+
+        $this->db->select("
             t.*,
+            {$status_col} as response_status,
+            {$msg_col} as response_message,
+            {$raw_col} as raw_response,
             st.admission_no,
             st.firstname as st_firstname,
             st.lastname as st_lastname,
             st.mobileno as st_mobileno,
             st.email as st_email
-        ');
+        ", false);
         $this->db->from('atom_transaction t');
         $this->db->join('students st', 'st.id = t.student_id', 'left');
 
@@ -100,24 +124,22 @@ class Paymenttransaction_model extends MY_Model
             $this->db->where('DATE(t.date) <=', date('Y-m-d', strtotime($date_to)));
         }
         if (!empty($status)) {
-            if ($status == 'SUCCESS') {
-                $this->db->group_start();
-                $this->db->where('t.response_status', 'SUCCESS');
-                $this->db->or_where('t.f_code', 'OTS0000');
-                $this->db->or_where('t.f_code', 'Ok');
-                $this->db->or_where('(t.response_status IS NULL AND t.amt > 0)');
-                $this->db->group_end();
-            } elseif ($status == 'FAILED') {
-                $this->db->group_start();
-                $this->db->where('t.response_status', 'FAILED');
-                $this->db->or_where('t.f_code', 'OTS0600');
-                $this->db->or_where('t.f_code', 'F');
-                $this->db->group_end();
-            } elseif ($status == 'CANCELLED') {
-                $this->db->group_start();
-                $this->db->where('t.response_status', 'CANCELLED');
-                $this->db->or_where('t.f_code', 'OTS0101');
-                $this->db->group_end();
+            if ($has_atom_status) {
+                $this->db->where('t.response_status', $status);
+            } else {
+                if ($status == 'SUCCESS') {
+                    $this->db->group_start();
+                    $this->db->where_in('t.f_code', array('OTS0000', 'Ok'));
+                    $this->db->or_where('(t.amt > 0 AND (t.f_code NOT IN ("OTS0600", "F", "OTS0101") OR t.f_code IS NULL))');
+                    $this->db->group_end();
+                } elseif ($status == 'FAILED') {
+                    $this->db->group_start();
+                    $this->db->where_in('t.f_code', array('OTS0600', 'F'));
+                    $this->db->or_where('(t.amt = 0 AND (t.f_code IS NULL OR t.f_code = ""))');
+                    $this->db->group_end();
+                } elseif ($status == 'CANCELLED') {
+                    $this->db->where('t.f_code', 'OTS0101');
+                }
             }
         }
         if (!empty($search)) {
@@ -135,7 +157,7 @@ class Paymenttransaction_model extends MY_Model
 
         $this->db->order_by('t.trans_id', 'DESC');
         $query = $this->db->get();
-        return $query->result_array();
+        return $query ? $query->result_array() : array();
     }
 
     /**
@@ -191,7 +213,7 @@ class Paymenttransaction_model extends MY_Model
         $this->db->order_by('d.id', 'DESC');
         $this->db->limit(500);
         $query = $this->db->get();
-        return $query->result_array();
+        return $query ? $query->result_array() : array();
     }
 
     /**
@@ -225,7 +247,7 @@ class Paymenttransaction_model extends MY_Model
 
         $this->db->order_by('ep.id', 'DESC');
         $query = $this->db->get();
-        return $query->result_array();
+        return $query ? $query->result_array() : array();
     }
 
     /**
@@ -239,7 +261,7 @@ class Paymenttransaction_model extends MY_Model
         $this->db->where('p.admission_id', $admission_id);
         $this->db->order_by('p.id', 'DESC');
         $query = $this->db->get();
-        return $query->result_array();
+        return $query ? $query->result_array() : array();
     }
 
     /**
@@ -252,7 +274,7 @@ class Paymenttransaction_model extends MY_Model
         $this->db->join('students st', 'st.id = t.student_id', 'left');
         $this->db->where('t.trans_id', $trans_id);
         $query = $this->db->get();
-        return $query->row_array();
+        return $query ? $query->row_array() : array();
     }
 
     /**
@@ -282,7 +304,8 @@ class Paymenttransaction_model extends MY_Model
                 FROM online_admission_payment p 
                 JOIN online_admissions o ON o.id = p.admission_id 
                 WHERE o.paid_status = 0 OR o.paid_status IS NULL";
-        $records = $this->db->query($sql)->result_array();
+        $res = $this->db->query($sql);
+        $records = $res ? $res->result_array() : array();
         $count = 0;
         foreach ($records as $r) {
             $this->db->where('id', $r['admission_id']);
@@ -307,7 +330,8 @@ class Paymenttransaction_model extends MY_Model
                 COUNT(*) as total_count,
                 IFNULL(SUM(paid_amount), 0) as total_amount
             FROM online_admission_payment
-        ")->row_array();
+        ");
+        $adm_row = $adm_stats ? $adm_stats->row_array() : array();
 
         // Unsynced count
         $unsynced = $this->db->query("
@@ -315,18 +339,33 @@ class Paymenttransaction_model extends MY_Model
             FROM online_admission_payment p
             JOIN online_admissions o ON o.id = p.admission_id
             WHERE o.paid_status = 0 OR o.paid_status IS NULL
-        ")->row_array();
+        ");
+        $unsynced_row = $unsynced ? $unsynced->row_array() : array();
 
         // Atom / App transactions
-        $atom_stats = $this->db->query("
-            SELECT 
-                COUNT(*) as total_count,
-                IFNULL(SUM(CASE WHEN amt REGEXP '^[0-9]+(\.[0-9]+)?$' THEN amt ELSE 0 END), 0) as total_amount,
-                SUM(CASE WHEN response_status = 'SUCCESS' OR f_code IN ('OTS0000', 'Ok') OR (response_status IS NULL AND amt > 0) THEN 1 ELSE 0 END) as success_count,
-                SUM(CASE WHEN response_status = 'FAILED' OR f_code IN ('OTS0600', 'F') THEN 1 ELSE 0 END) as failed_count,
-                SUM(CASE WHEN response_status = 'CANCELLED' OR f_code = 'OTS0101' THEN 1 ELSE 0 END) as cancelled_count
-            FROM atom_transaction
-        ")->row_array();
+        $has_atom_status = $this->db->field_exists('response_status', 'atom_transaction');
+        if ($has_atom_status) {
+            $atom_stats = $this->db->query("
+                SELECT 
+                    COUNT(*) as total_count,
+                    IFNULL(SUM(CASE WHEN amt REGEXP '^[0-9]+(\.[0-9]+)?$' THEN amt ELSE 0 END), 0) as total_amount,
+                    SUM(CASE WHEN response_status = 'SUCCESS' THEN 1 ELSE 0 END) as success_count,
+                    SUM(CASE WHEN response_status = 'FAILED' THEN 1 ELSE 0 END) as failed_count,
+                    SUM(CASE WHEN response_status = 'CANCELLED' THEN 1 ELSE 0 END) as cancelled_count
+                FROM atom_transaction
+            ");
+        } else {
+            $atom_stats = $this->db->query("
+                SELECT 
+                    COUNT(*) as total_count,
+                    IFNULL(SUM(CASE WHEN amt REGEXP '^[0-9]+(\.[0-9]+)?$' THEN amt ELSE 0 END), 0) as total_amount,
+                    SUM(CASE WHEN f_code IN ('OTS0000', 'Ok') OR (amt > 0 AND (f_code NOT IN ('OTS0600', 'F', 'OTS0101') OR f_code IS NULL)) THEN 1 ELSE 0 END) as success_count,
+                    SUM(CASE WHEN f_code IN ('OTS0600', 'F') THEN 1 ELSE 0 END) as failed_count,
+                    SUM(CASE WHEN f_code = 'OTS0101' THEN 1 ELSE 0 END) as cancelled_count
+                FROM atom_transaction
+            ");
+        }
+        $atom_row = $atom_stats ? $atom_stats->row_array() : array();
 
         // Enquiry payments
         $enq_stats = $this->db->query("
@@ -334,19 +373,20 @@ class Paymenttransaction_model extends MY_Model
                 COUNT(*) as total_count,
                 IFNULL(SUM(paid_amount), 0) as total_amount
             FROM enquiry_form_payment
-        ")->row_array();
+        ");
+        $enq_row = $enq_stats ? $enq_stats->row_array() : array();
 
         return array(
-            'admission_count'     => $adm_stats['total_count'] ?? 0,
-            'admission_amount'    => $adm_stats['total_amount'] ?? 0,
-            'unsynced_count'      => $unsynced['unsynced_count'] ?? 0,
-            'atom_total_count'    => $atom_stats['total_count'] ?? 0,
-            'atom_total_amount'   => $atom_stats['total_amount'] ?? 0,
-            'atom_success_count'  => $atom_stats['success_count'] ?? 0,
-            'atom_failed_count'   => $atom_stats['failed_count'] ?? 0,
-            'atom_cancelled_count'=> $atom_stats['cancelled_count'] ?? 0,
-            'enquiry_count'       => $enq_stats['total_count'] ?? 0,
-            'enquiry_amount'      => $enq_stats['total_amount'] ?? 0,
+            'admission_count'     => isset($adm_row['total_count']) ? (int)$adm_row['total_count'] : 0,
+            'admission_amount'    => isset($adm_row['total_amount']) ? (float)$adm_row['total_amount'] : 0,
+            'unsynced_count'      => isset($unsynced_row['unsynced_count']) ? (int)$unsynced_row['unsynced_count'] : 0,
+            'atom_total_count'    => isset($atom_row['total_count']) ? (int)$atom_row['total_count'] : 0,
+            'atom_total_amount'   => isset($atom_row['total_amount']) ? (float)$atom_row['total_amount'] : 0,
+            'atom_success_count'  => isset($atom_row['success_count']) ? (int)$atom_row['success_count'] : 0,
+            'atom_failed_count'   => isset($atom_row['failed_count']) ? (int)$atom_row['failed_count'] : 0,
+            'atom_cancelled_count'=> isset($atom_row['cancelled_count']) ? (int)$atom_row['cancelled_count'] : 0,
+            'enquiry_count'       => isset($enq_row['total_count']) ? (int)$enq_row['total_count'] : 0,
+            'enquiry_amount'      => isset($enq_row['total_amount']) ? (float)$enq_row['total_amount'] : 0,
         );
     }
 }

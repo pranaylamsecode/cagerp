@@ -20,7 +20,7 @@
                     <span class="info-box-icon"><i class="fa fa-user-plus"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Admission Payments</span>
-                        <span class="info-box-number"><?php echo $stats['admission_count']; ?> (<?php echo $currency_symbol . number_format($stats['admission_amount'], 2); ?>)</span>
+                        <span class="info-box-number"><?php echo isset($stats['admission_count']) ? $stats['admission_count'] : 0; ?> (<?php echo $currency_symbol . number_format(isset($stats['admission_amount']) ? $stats['admission_amount'] : 0, 2); ?>)</span>
                         <div class="progress"><div class="progress-bar" style="width: 100%"></div></div>
                         <span class="progress-description text-right">
                             <a href="<?php echo site_url('admin/paymenttransactions?tab=admission'); ?>" style="color:#fff; text-decoration:underline;">View Details &rarr;</a>
@@ -34,7 +34,7 @@
                     <span class="info-box-icon"><i class="fa fa-mobile-phone"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">App / Atom Success</span>
-                        <span class="info-box-number"><?php echo $stats['atom_success_count']; ?> (<?php echo $currency_symbol . number_format($stats['atom_total_amount'], 2); ?>)</span>
+                        <span class="info-box-number"><?php echo isset($stats['atom_success_count']) ? $stats['atom_success_count'] : 0; ?> (<?php echo $currency_symbol . number_format(isset($stats['atom_total_amount']) ? $stats['atom_total_amount'] : 0, 2); ?>)</span>
                         <div class="progress"><div class="progress-bar" style="width: 100%"></div></div>
                         <span class="progress-description text-right">
                             <a href="<?php echo site_url('admin/paymenttransactions?tab=atom&status=SUCCESS'); ?>" style="color:#fff; text-decoration:underline;">View Success &rarr;</a>
@@ -48,7 +48,7 @@
                     <span class="info-box-icon"><i class="fa fa-times-circle"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">App Failed / Cancelled</span>
-                        <span class="info-box-number"><?php echo ($stats['atom_failed_count'] + $stats['atom_cancelled_count']); ?> attempts</span>
+                        <span class="info-box-number"><?php echo (isset($stats['atom_failed_count']) ? $stats['atom_failed_count'] : 0) + (isset($stats['atom_cancelled_count']) ? $stats['atom_cancelled_count'] : 0); ?> attempts</span>
                         <div class="progress"><div class="progress-bar" style="width: 100%"></div></div>
                         <span class="progress-description text-right">
                             <a href="<?php echo site_url('admin/paymenttransactions?tab=atom&status=FAILED'); ?>" style="color:#fff; text-decoration:underline;">View Failed &rarr;</a>
@@ -58,14 +58,14 @@
             </div>
 
             <div class="col-md-3 col-sm-6 col-xs-12">
-                <div class="info-box <?php echo $stats['unsynced_count'] > 0 ? 'bg-yellow' : 'bg-teal'; ?>">
-                    <span class="info-box-icon"><i class="fa fa-refresh <?php echo $stats['unsynced_count'] > 0 ? 'fa-spin' : ''; ?>"></i></span>
+                <div class="info-box <?php echo (isset($stats['unsynced_count']) && $stats['unsynced_count'] > 0) ? 'bg-yellow' : 'bg-teal'; ?>">
+                    <span class="info-box-icon"><i class="fa fa-refresh <?php echo (isset($stats['unsynced_count']) && $stats['unsynced_count'] > 0) ? 'fa-spin' : ''; ?>"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Unsynced Admissions</span>
-                        <span class="info-box-number" id="unsynced-count-badge"><?php echo $stats['unsynced_count']; ?> Records</span>
+                        <span class="info-box-number" id="unsynced-count-badge"><?php echo isset($stats['unsynced_count']) ? $stats['unsynced_count'] : 0; ?> Records</span>
                         <div class="progress"><div class="progress-bar" style="width: 100%"></div></div>
                         <span class="progress-description text-right">
-                            <?php if ($stats['unsynced_count'] > 0) { ?>
+                            <?php if (isset($stats['unsynced_count']) && $stats['unsynced_count'] > 0) { ?>
                                 <button type="button" class="btn btn-xs btn-default" onclick="syncAllAdmissionPayments()"><i class="fa fa-bolt"></i> Sync All Now</button>
                             <?php } else { ?>
                                 <span style="color:#fff;">All in sync &check;</span>
@@ -76,7 +76,7 @@
             </div>
         </div>
 
-        <?php if ($stats['unsynced_count'] > 0) { ?>
+        <?php if (isset($stats['unsynced_count']) && $stats['unsynced_count'] > 0) { ?>
             <div class="alert alert-warning alert-dismissible" id="unsynced-alert-box">
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
                 <h4><i class="icon fa fa-warning"></i> Payment Synchronization Alert!</h4>
@@ -109,17 +109,17 @@
 
                     <div class="form-group" style="margin-right: 10px;">
                         <label>Search: </label>
-                        <input type="text" name="search" class="form-control input-sm" placeholder="Ref No / Txn ID / Name / Mobile" value="<?php echo htmlspecialchars($search ?? ''); ?>" style="width: 220px;">
+                        <input type="text" name="search" class="form-control input-sm" placeholder="Ref No / Txn ID / Name / Mobile" value="<?php echo htmlspecialchars(!empty($search) ? $search : ''); ?>" style="width: 220px;">
                     </div>
 
                     <div class="form-group" style="margin-right: 10px;">
                         <label>From: </label>
-                        <input type="date" name="date_from" class="form-control input-sm" value="<?php echo htmlspecialchars($date_from ?? ''); ?>">
+                        <input type="date" name="date_from" class="form-control input-sm" value="<?php echo htmlspecialchars(!empty($date_from) ? $date_from : ''); ?>">
                     </div>
 
                     <div class="form-group" style="margin-right: 10px;">
                         <label>To: </label>
-                        <input type="date" name="date_to" class="form-control input-sm" value="<?php echo htmlspecialchars($date_to ?? ''); ?>">
+                        <input type="date" name="date_to" class="form-control input-sm" value="<?php echo htmlspecialchars(!empty($date_to) ? $date_to : ''); ?>">
                     </div>
 
                     <?php if ($active_tab == 'admission') { ?>
@@ -203,22 +203,30 @@
                                     <?php if (!empty($admission_payments)) {
                                         foreach ($admission_payments as $idx => $row) {
                                             $is_synced = ($row['paid_status'] == 1);
+                                            $ref_no    = !empty($row['reference_no']) ? $row['reference_no'] : 'N/A';
+                                            $s_fname   = !empty($row['firstname']) ? $row['firstname'] : '';
+                                            $s_lname   = !empty($row['lastname']) ? $row['lastname'] : '';
+                                            $s_class   = !empty($row['class']) ? $row['class'] : '';
+                                            $s_sec     = !empty($row['section']) ? $row['section'] : '';
+                                            $s_mob     = !empty($row['mobileno']) ? $row['mobileno'] : 'N/A';
+                                            $s_email   = !empty($row['email']) ? $row['email'] : '';
+                                            $pmode     = !empty($row['payment_mode']) ? $row['payment_mode'] : 'online';
                                     ?>
                                         <tr id="adm-row-<?php echo $row['admission_id']; ?>">
                                             <td><?php echo $idx + 1; ?></td>
                                             <td>
                                                 <a href="<?php echo site_url('admin/onlinestudent/edit/' . $row['admission_id']); ?>" target="_blank" title="Edit Student">
-                                                    <strong><?php echo htmlspecialchars($row['reference_no'] ?? 'N/A'); ?></strong>
+                                                    <strong><?php echo htmlspecialchars($ref_no); ?></strong>
                                                 </a>
                                             </td>
-                                            <td><?php echo htmlspecialchars(trim(($row['firstname'] ?? '') . ' ' . ($row['lastname'] ?? ''))); ?></td>
-                                            <td><?php echo htmlspecialchars(($row['class'] ?? '') . ' (' . ($row['section'] ?? '') . ')'); ?></td>
+                                            <td><?php echo htmlspecialchars(trim($s_fname . ' ' . $s_lname)); ?></td>
+                                            <td><?php echo htmlspecialchars($s_class . ' (' . $s_sec . ')'); ?></td>
                                             <td>
-                                                <i class="fa fa-phone text-muted"></i> <?php echo htmlspecialchars($row['mobileno'] ?? 'N/A'); ?><br>
-                                                <small class="text-muted"><i class="fa fa-envelope-o"></i> <?php echo htmlspecialchars($row['email'] ?? ''); ?></small>
+                                                <i class="fa fa-phone text-muted"></i> <?php echo htmlspecialchars($s_mob); ?><br>
+                                                <small class="text-muted"><i class="fa fa-envelope-o"></i> <?php echo htmlspecialchars($s_email); ?></small>
                                             </td>
                                             <td><span class="label label-info" style="font-size: 13px;">₹<?php echo number_format($row['paid_amount'], 2); ?></span></td>
-                                            <td><span class="badge bg-navy"><?php echo strtoupper(htmlspecialchars($row['payment_mode'] ?? 'online')); ?></span></td>
+                                            <td><span class="badge bg-navy"><?php echo strtoupper(htmlspecialchars($pmode)); ?></span></td>
                                             <td>
                                                 <code><?php echo htmlspecialchars($row['transaction_id']); ?></code>
                                                 <?php if (!empty($row['order_id'])) { ?>
@@ -277,11 +285,11 @@
                                 <tbody>
                                     <?php if (!empty($atom_transactions)) {
                                         foreach ($atom_transactions as $row) {
-                                            $disp_name = !empty($row['st_firstname']) ? ($row['st_firstname'] . ' ' . $row['st_lastname']) : ($row['udf1'] ?? 'N/A');
-                                            $disp_phone = !empty($row['st_mobileno']) ? $row['st_mobileno'] : ($row['udf3'] ?? 'N/A');
+                                            $disp_name = !empty($row['st_firstname']) ? ($row['st_firstname'] . ' ' . $row['st_lastname']) : (!empty($row['udf1']) ? $row['udf1'] : 'N/A');
+                                            $disp_phone = !empty($row['st_mobileno']) ? $row['st_mobileno'] : (!empty($row['udf3']) ? $row['udf3'] : 'N/A');
 
                                             // Determine display status
-                                            $status_str = strtoupper($row['response_status'] ?? '');
+                                            $status_str = !empty($row['response_status']) ? strtoupper($row['response_status']) : '';
                                             if (empty($status_str)) {
                                                 if ($row['f_code'] == 'OTS0000' || $row['f_code'] == 'Ok' || $row['amt'] > 0) {
                                                     $status_str = 'SUCCESS';
@@ -296,6 +304,9 @@
                                             if ($status_str == 'SUCCESS') $status_badge = 'label-success';
                                             elseif ($status_str == 'CANCELLED') $status_badge = 'label-warning';
                                             elseif ($status_str == 'FAILED') $status_badge = 'label-danger';
+
+                                            $resp_msg = !empty($row['response_message']) ? $row['response_message'] : (!empty($row['discriminator']) ? $row['discriminator'] : 'Processed by App');
+                                            $atom_txn = !empty($row['mmp_txn']) ? $row['mmp_txn'] : (!empty($row['mer_txn']) ? $row['mer_txn'] : 'N/A');
                                     ?>
                                         <tr>
                                             <td><strong>#<?php echo $row['trans_id']; ?></strong></td>
@@ -307,16 +318,16 @@
                                                 <?php } ?>
                                             </td>
                                             <td><?php echo htmlspecialchars($disp_phone); ?></td>
-                                            <td><?php echo htmlspecialchars($row['student_id'] ?? 'N/A'); ?></td>
+                                            <td><?php echo htmlspecialchars(!empty($row['student_id']) ? $row['student_id'] : 'N/A'); ?></td>
                                             <td><span class="label label-primary" style="font-size: 13px;">₹<?php echo number_format((float)$row['amt'], 2); ?></span></td>
-                                            <td><code><?php echo htmlspecialchars($row['f_code'] ?? 'N/A'); ?></code></td>
+                                            <td><code><?php echo htmlspecialchars(!empty($row['f_code']) ? $row['f_code'] : 'N/A'); ?></code></td>
                                             <td><span class="label <?php echo $status_badge; ?>"><?php echo $status_str; ?></span></td>
                                             <td>
-                                                <small><?php echo htmlspecialchars($row['response_message'] ?? ($row['discriminator'] ?? 'Processed by App')); ?></small>
+                                                <small><?php echo htmlspecialchars($resp_msg); ?></small>
                                             </td>
-                                            <td><code><?php echo htmlspecialchars($row['mmp_txn'] ?? ($row['mer_txn'] ?? 'N/A')); ?></code></td>
+                                            <td><code><?php echo htmlspecialchars($atom_txn); ?></code></td>
                                             <td>
-                                                <small><?php echo htmlspecialchars($row['bank_txn'] ?? 'N/A'); ?></small>
+                                                <small><?php echo htmlspecialchars(!empty($row['bank_txn']) ? $row['bank_txn'] : 'N/A'); ?></small>
                                                 <?php if (!empty($row['bank_name'])) { ?>
                                                     <br><small class="text-muted">(<?php echo htmlspecialchars($row['bank_name']); ?>)</small>
                                                 <?php } ?>
@@ -357,9 +368,11 @@
                                     <?php if (!empty($fee_deposits)) {
                                         foreach ($fee_deposits as $row) {
                                             $detail = json_decode($row['amount_detail'], true);
-                                            $amt = $detail['amount'] ?? 0;
-                                            $date = $detail['date'] ?? $row['created_at'];
-                                            $desc = $detail['description'] ?? 'online';
+                                            $amt  = isset($detail['amount']) ? $detail['amount'] : 0;
+                                            $date = isset($detail['date']) ? $detail['date'] : (isset($row['created_at']) ? $row['created_at'] : '');
+                                            $desc = isset($detail['description']) ? $detail['description'] : 'online';
+                                            $fg_name = !empty($row['fee_group_name']) ? $row['fee_group_name'] : '';
+                                            $ft_type = !empty($row['fee_type']) ? $row['fee_type'] : '';
                                     ?>
                                         <tr>
                                             <td>#<?php echo $row['id']; ?></td>
@@ -367,7 +380,7 @@
                                             <td><strong><?php echo htmlspecialchars(trim($row['firstname'] . ' ' . $row['lastname'])); ?></strong></td>
                                             <td><?php echo htmlspecialchars($row['admission_no']); ?></td>
                                             <td><?php echo htmlspecialchars($row['class'] . ' (' . $row['section'] . ')'); ?></td>
-                                            <td><?php echo htmlspecialchars(($row['fee_group_name'] ?? '') . ' - ' . ($row['fee_type'] ?? '')); ?></td>
+                                            <td><?php echo htmlspecialchars($fg_name . ' - ' . $ft_type); ?></td>
                                             <td><span class="label label-success" style="font-size: 13px;">₹<?php echo number_format((float)$amt, 2); ?></span></td>
                                             <td><span class="badge bg-green"><?php echo htmlspecialchars($desc); ?></span></td>
                                         </tr>
@@ -401,17 +414,20 @@
                                 <tbody>
                                     <?php if (!empty($enquiry_payments)) {
                                         foreach ($enquiry_payments as $idx => $row) {
+                                            $cand_name = !empty($row['candidate_name']) ? $row['candidate_name'] : 'N/A';
+                                            $cand_cont = !empty($row['contact']) ? $row['contact'] : 'N/A';
+                                            $cand_note = !empty($row['note']) ? $row['note'] : '';
                                     ?>
                                         <tr>
                                             <td><?php echo $idx + 1; ?></td>
                                             <td>#<?php echo $row['enquiry_id']; ?></td>
-                                            <td><strong><?php echo htmlspecialchars($row['candidate_name'] ?? 'N/A'); ?></strong></td>
-                                            <td><?php echo htmlspecialchars($row['contact'] ?? 'N/A'); ?></td>
+                                            <td><strong><?php echo htmlspecialchars($cand_name); ?></strong></td>
+                                            <td><?php echo htmlspecialchars($cand_cont); ?></td>
                                             <td><span class="label label-info" style="font-size: 13px;">₹<?php echo number_format($row['paid_amount'], 2); ?></span></td>
                                             <td><span class="badge bg-navy"><?php echo strtoupper($row['payment_mode']); ?></span></td>
                                             <td><code><?php echo htmlspecialchars($row['transaction_id']); ?></code></td>
                                             <td><?php echo date('d-m-Y h:i A', strtotime($row['date'])); ?></td>
-                                            <td><small><?php echo htmlspecialchars($row['note'] ?? ''); ?></small></td>
+                                            <td><small><?php echo htmlspecialchars($cand_note); ?></small></td>
                                         </tr>
                                     <?php } } else { ?>
                                         <tr><td colspan="9" class="text-center text-muted">No enquiry payments found.</td></tr>
