@@ -495,11 +495,9 @@ $admission_date = !empty($value->created_at) ? date($this->customlib->getSchoolD
                 }
 
                 if ($sch_setting->online_admission_payment == 'yes') {
-                    if ($value->paid_status == 1) {
+                    if ($value->paid_status == 1 || !empty($value->admission_txn_id)) {
                         $txn_info = !empty($value->admission_txn_id) ? '<br><small class="text-muted" title="' . htmlspecialchars($value->admission_txn_id) . '"><i class="fa fa-credit-card"></i> ' . htmlspecialchars(substr($value->admission_txn_id, 0, 16)) . '...</small>' : '';
                         $row[] = '<span class="label label-success">' . $this->lang->line('paid') . '</span>' . $txn_info;
-                    } else if (!empty($value->admission_txn_id)) {
-                        $row[] = '<span class="label label-warning" title="Payment recorded in DB: ' . htmlspecialchars($value->admission_txn_id) . '">Paid (Unsynced)</span><br><a href="javascript:void(0)" onclick="syncAdmissionPayment(' . $value->id . ')" class="btn btn-xs btn-info mt-5" title="Click to sync status to Paid"><i class="fa fa-refresh"></i> Sync</a>';
                     } else {
                         $row[] = '<span class="label label-danger">' . $this->lang->line('unpaid') . '</span>';
                     }
