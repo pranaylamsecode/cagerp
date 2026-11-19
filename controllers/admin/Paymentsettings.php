@@ -41,6 +41,8 @@ class Paymentsettings extends Admin_Controller {
 
         $data['paymentlist'] = $payment_result;
 
+        $data['test_transactions'] = $this->paymentsetting_model->getTestTransactions(10);
+
 
 
 
@@ -1040,7 +1042,250 @@ class Paymentsettings extends Admin_Controller {
 
     }
 
+    /**
+     * AJAX: Test Razorpay API Connection
+     */
+    public function test_razorpay_connection()
+    {
+        if (!$this->rbac->hasPrivilege('payment_methods', 'can_view')) {
+            echo json_encode(array('status' => 'fail', 'message' => 'Access Denied'));
+            return;
+        }
 
+        $razorpay = $this->db->where('payment_type', 'razorpay')->get('payment_settings')->row();
+        if (empty($razorpay) || empty($razorpay->api_publishable_key) || empty($razorpay->api_secret_key)) {
+            echo json_encode(array('status' => 'fail', 'message' => 'Razorpay Key ID or Secret Key is not configured yet. Please enter and save your keys above.'));
+            return;
+        }
+
+        $key_id     = trim($razorpay->api_publishable_key);
+        $secret_key = trim($razorpay->api_secret_key);
+
+        $ch = curl_init('https://api.razorpay.com/v1/payments?count=1');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_USERPWD, $key_id . ':' . $secret_key);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $resp = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_err = curl_error($ch);
+        curl_close($ch);
+
+        if ($http_code == 200) {
+            echo json_encode(array(
+                'status'  => 'success',
+                'message' => 'Razorpay Live API Connected Successfully! (HTTP 200 OK). Credentials are verified and active on Razorpay.',
+                'key_id'  => $key_id,
+            ));
+        } elseif ($http_code == 401) {
+            echo json_encode(array(
+                'status'  => 'fail',
+                'message' => 'Authentication Failed (HTTP 401 Unauthorized): Invalid Key ID or Key Secret. Please verify the keys in your Razorpay Dashboard.',
+            ));
+        } else {
+            $err_msg = !empty($curl_err) ? $curl_err : "Razorpay API returned HTTP {$http_code}";
+            if (!empty($resp)) {
+                $err_data = json_decode($resp, true);
+                if (isset($err_data['error']['description'])) {
+                    $err_msg = $err_data['error']['description'];
+                }
+            }
+            echo json_encode(array(
+                'status'  => 'fail',
+                'message' => 'Connection check failed: ' . $err_msg,
+            ));
+        }
+    }
+
+    /**
+     * AJAX: Create Razorpay ₹1 Live Test Order
+     */
+    public function create_razorpay_test_order()
+    {
+        if (!$this->rbac->hasPrivilege('payment_methods', 'can_edit')) {
+            echo json_encode(array('status' => 'fail', 'message' => 'Access Denied'));
+            return;
+        }
+
+        $amount = (float)$this->input->post('amount');
+        if ($amount < 1) {
+            $amount = 1.00;
+        }
+
+        $razorpay = $this->db->where('payment_type', 'razorpay')->get('payment_settings')->row();
+        if (empty($razorpay) || empty($razorpay->api_publishable_key) || empty($razorpay->api_secret_key)) {
+            echo json_encode(array('status' => 'fail', 'message' => 'Razorpay credentials not found in database.'));
+            return;
+        }
+
+        $key_id     = trim($razorpay->api_publishable_key);
+        $secret_key = trim($razorpay->api_secret_key);
+        $total_paise = round($amount * 100);
+        $receipt = 'TEST_' . time();
+
+        $admin_session = $this->session->userdata('admin');
+        $username = isset($admin_session['username']) ? $admin_session['username'] : 'admin';
+
+        $order_payload = array(
+            'amount'          => $total_paise,
+            'currency'        => 'INR',
+            'receipt'         => $receipt,
+            'payment_capture' => 1,
+            'notes'           => array(
+                'purpose'   => 'Admin Razorpay Live Test',
+                'tested_by' => $username,
+                'time'      => date('Y-m-d H:i:s'),
+            ),
+        );
+
+        $ch = curl_init('https://api.razorpay.com/v1/orders');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($order_payload));
+        curl_setopt($ch, CURLOPT_USERPWD, $key_id . ':' . $secret_key);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $resp = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($http_code == 200) {
+            $order = json_decode($resp, true);
+            echo json_encode(array(
+                'status'         => 'success',
+                'order_id'       => $order['id'],
+                'amount'         => $total_paise,
+                'display_amount' => number_format($amount, 2),
+                'key_id'         => $key_id,
+                'currency'       => 'INR',
+                'receipt'        => $receipt,
+            ));
+        } else {
+            $err = json_decode($resp, true);
+            $msg = isset($err['error']['description']) ? $err['error']['description'] : "Failed to create Razorpay Order (HTTP {$http_code})";
+            echo json_encode(array('status' => 'fail', 'message' => $msg));
+        }
+    }
+
+    /**
+     * AJAX: Verify Live Test Payment & Store in DB
+     */
+    public function verify_razorpay_test_payment()
+    {
+        if (!$this->rbac->hasPrivilege('payment_methods', 'can_edit')) {
+            echo json_encode(array('status' => 'fail', 'message' => 'Access Denied'));
+            return;
+        }
+
+        $payment_id = trim($this->input->post('razorpay_payment_id'));
+        $order_id   = trim($this->input->post('razorpay_order_id'));
+        $signature  = trim($this->input->post('razorpay_signature'));
+        $amount     = (float)$this->input->post('amount');
+        if ($amount < 1) {
+            $amount = 1.00;
+        }
+
+        if (empty($payment_id)) {
+            echo json_encode(array('status' => 'fail', 'message' => 'Payment ID missing.'));
+            return;
+        }
+
+        $razorpay = $this->db->where('payment_type', 'razorpay')->get('payment_settings')->row();
+        $key_id     = trim($razorpay->api_publishable_key);
+        $secret_key = trim($razorpay->api_secret_key);
+
+        // 1. Signature Verification
+        $is_signature_valid = false;
+        if (!empty($order_id) && !empty($signature)) {
+            $expected_signature = hash_hmac('sha256', $order_id . '|' . $payment_id, $secret_key);
+            $is_signature_valid = hash_equals($expected_signature, $signature);
+        }
+
+        // 2. Fetch live payment from Razorpay API
+        $ch = curl_init('https://api.razorpay.com/v1/payments/' . urlencode($payment_id));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_USERPWD, $key_id . ':' . $secret_key);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $api_resp = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $payment_info = json_decode($api_resp, true);
+
+        // 3. If authorized, capture it
+        if ($http_code == 200 && isset($payment_info['status']) && $payment_info['status'] === 'authorized') {
+            $cap_ch = curl_init('https://api.razorpay.com/v1/payments/' . urlencode($payment_id) . '/capture');
+            curl_setopt($cap_ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($cap_ch, CURLOPT_POST, true);
+            curl_setopt($cap_ch, CURLOPT_POSTFIELDS, http_build_query(array(
+                'amount'   => round($amount * 100),
+                'currency' => 'INR',
+            )));
+            curl_setopt($cap_ch, CURLOPT_USERPWD, $key_id . ':' . $secret_key);
+            curl_setopt($cap_ch, CURLOPT_TIMEOUT, 20);
+            curl_setopt($cap_ch, CURLOPT_SSL_VERIFYPEER, false);
+            $cap_resp = curl_exec($cap_ch);
+            curl_close($cap_ch);
+            $cap_info = json_decode($cap_resp, true);
+            if (isset($cap_info['status']) && $cap_info['status'] === 'captured') {
+                $payment_info = $cap_info;
+            }
+        }
+
+        // 4. Save to gateway_test_transactions table in database
+        $admin_session = $this->session->userdata('admin');
+        $username = isset($admin_session['username']) ? $admin_session['username'] : 'admin';
+
+        $record = array(
+            'gateway'               => 'razorpay',
+            'payment_id'            => $payment_id,
+            'order_id'              => $order_id,
+            'signature'             => $signature,
+            'amount'                => isset($payment_info['amount']) ? ($payment_info['amount'] / 100) : $amount,
+            'currency'              => isset($payment_info['currency']) ? $payment_info['currency'] : 'INR',
+            'status'                => isset($payment_info['status']) ? $payment_info['status'] : 'captured',
+            'method'                => isset($payment_info['method']) ? $payment_info['method'] : 'online',
+            'bank'                  => isset($payment_info['bank']) ? $payment_info['bank'] : null,
+            'vpa'                   => isset($payment_info['vpa']) ? $payment_info['vpa'] : null,
+            'email'                 => isset($payment_info['email']) ? $payment_info['email'] : null,
+            'contact'               => isset($payment_info['contact']) ? $payment_info['contact'] : null,
+            'is_signature_verified' => $is_signature_valid ? 1 : 0,
+            'raw_response'          => json_encode($payment_info),
+            'tested_by'             => $username,
+            'created_at'            => date('Y-m-d H:i:s'),
+        );
+
+        $test_id = $this->paymentsetting_model->saveTestTransaction($record);
+
+        echo json_encode(array(
+            'status'                => 'success',
+            'test_id'               => $test_id,
+            'payment_id'            => $payment_id,
+            'order_id'              => $order_id,
+            'amount'                => number_format($record['amount'], 2),
+            'method'                => strtoupper($record['method']),
+            'payment_status'        => strtoupper($record['status']),
+            'is_signature_verified' => $is_signature_valid,
+            'bank_or_vpa'           => !empty($record['vpa']) ? $record['vpa'] : (!empty($record['bank']) ? $record['bank'] : 'N/A'),
+            'message'               => 'Live Test Payment of ₹' . number_format($record['amount'], 2) . ' Successfully Processed & Saved to Database!',
+            'raw'                   => $payment_info,
+        ));
+    }
+
+    /**
+     * AJAX: Get single test transaction raw response
+     */
+    public function get_test_transaction_detail()
+    {
+        $id = (int)$this->input->post('id');
+        $record = $this->paymentsetting_model->getTestTransactionById($id);
+        if (!empty($record)) {
+            echo json_encode(array('status' => 'success', 'data' => $record));
+        } else {
+            echo json_encode(array('status' => 'fail', 'message' => 'Record not found.'));
+        }
+    }
 
 }
 

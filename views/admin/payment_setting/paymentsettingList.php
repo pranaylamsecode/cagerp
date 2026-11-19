@@ -166,6 +166,8 @@
 
                             </form>
 
+
+
                         </div>
 
                         <!-- /.tab-pane -->
@@ -257,6 +259,8 @@
                                 </div>
 
                             </form>
+
+
 
                         </div>
 
@@ -355,6 +359,8 @@
                                 </div>
 
                             </form>
+
+
 
                         </div>
 
@@ -468,6 +474,8 @@
 
                             </form>
 
+
+
                         </div>
 
 
@@ -578,6 +586,8 @@
 
                             </form>
 
+
+
                         </div>
 
 
@@ -659,6 +669,8 @@
                                 </div>
 
                             </form>
+
+
 
                         </div>
 
@@ -759,6 +771,129 @@
                                 </div>
 
                             </form>
+
+                            <!-- ============================================== -->
+                            <!-- Razorpay Live Gateway Verification & Test Suite -->
+                            <!-- ============================================== -->
+                            <div class="box box-solid box-default" style="margin-top: 25px; border: 1px solid #00a65a; border-radius: 4px;">
+                                <div class="box-header with-border" style="background: #f4faf6; border-bottom: 1px solid #d2e8d9;">
+                                    <h4 class="box-title" style="color: #00733e; font-weight: 600;">
+                                        <i class="fa fa-flask"></i> Live Razorpay Gateway Test Suite & Verification Sandbox
+                                    </h4>
+                                    <div class="box-tools pull-right">
+                                        <span class="label label-success" style="font-size: 11px;"><i class="fa fa-circle"></i> Live Gateway Testing</span>
+                                    </div>
+                                </div>
+                                <div class="box-body" style="padding: 20px;">
+                                    <p class="text-muted" style="margin-bottom: 20px;">
+                                        Use this sandbox to test if your live Razorpay credentials (Key ID & Key Secret) are working properly. You can perform an <strong>instant API connection check</strong> or pay a <strong>live ₹1.00 test transaction</strong> via UPI (Google Pay, PhonePe, Paytm, QR) or Card using the exact same payment flow students use. All test payments will be verified and recorded into your database.
+                                    </p>
+
+                                    <!-- Step 1 & Step 2 Columns -->
+                                    <div class="row">
+                                        <!-- Test 1: API Connection Ping -->
+                                        <div class="col-md-5">
+                                            <div class="well well-sm" style="background: #fff; border-left: 4px solid #00c0ef;">
+                                                <h5 style="margin-top: 5px; font-weight: bold; color: #0073b7;">
+                                                    <i class="fa fa-plug"></i> Test 1: Fast API Connection Check
+                                                </h5>
+                                                <p style="font-size: 12px; color: #666;">
+                                                    Directly contacts Razorpay servers using your saved credentials to verify if your account is active and keys are valid.
+                                                </p>
+                                                <button type="button" class="btn btn-info btn-sm" id="btn-ping-razorpay">
+                                                    <i class="fa fa-refresh"></i> Check Razorpay API Connection
+                                                </button>
+                                                <div id="ping-result-box" style="margin-top: 10px; display: none;"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Test 2: ₹1 Live Payment Test -->
+                                        <div class="col-md-7">
+                                            <div class="well well-sm" style="background: #fff; border-left: 4px solid #00a65a;">
+                                                <h5 style="margin-top: 5px; font-weight: bold; color: #00733e;">
+                                                    <i class="fa fa-credit-card"></i> Test 2: Real ₹1 Live Payment Test (End-to-End)
+                                                </h5>
+                                                <p style="font-size: 12px; color: #666;">
+                                                    Launches live Razorpay Checkout modal. You can pay <strong>₹1</strong> via UPI QR code or Card. The server will verify the HMAC signature, confirm capture, and save the transaction into the database table <code>gateway_test_transactions</code>.
+                                                </p>
+
+                                                <div class="form-inline" style="margin-bottom: 10px;">
+                                                    <div class="form-group" style="margin-right: 10px;">
+                                                        <label style="font-size: 12px;">Amount (₹): </label>
+                                                        <input type="number" id="test-pay-amount" class="form-control input-sm" value="1.00" min="1" step="1" style="width: 80px; text-align: center; font-weight: bold;">
+                                                    </div>
+                                                    <div class="form-group" style="margin-right: 10px;">
+                                                        <label style="font-size: 12px;">Payer Name: </label>
+                                                        <input type="text" id="test-pay-name" class="form-control input-sm" value="Admin Test" style="width: 110px;">
+                                                    </div>
+                                                    <button type="button" class="btn btn-success btn-sm" id="btn-start-test-payment" style="font-weight: 600;">
+                                                        <i class="fa fa-bolt"></i> Pay Test Amount via Razorpay
+                                                    </button>
+                                                </div>
+
+                                                <div id="test-payment-result-box" style="margin-top: 10px; display: none;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Recent Test Transactions Table -->
+                                    <div style="margin-top: 15px;">
+                                        <h5 style="font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 8px;">
+                                            <i class="fa fa-history"></i> Recent Gateway Test Transactions in Database (<code>gateway_test_transactions</code>)
+                                        </h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-striped table-hover" id="test-trans-table">
+                                                <thead>
+                                                    <tr class="bg-gray-light">
+                                                        <th style="width: 50px;">ID</th>
+                                                        <th>Date & Time</th>
+                                                        <th>Payment ID</th>
+                                                        <th>Order ID</th>
+                                                        <th>Amount</th>
+                                                        <th>Method / Mode</th>
+                                                        <th>Bank / VPA</th>
+                                                        <th>Status</th>
+                                                        <th>Signature</th>
+                                                        <th class="text-right">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="test-trans-tbody">
+                                                    <?php if (!empty($test_transactions)) {
+                                                        foreach ($test_transactions as $t) {
+                                                    ?>
+                                                        <tr>
+                                                            <td>#<?php echo $t['id']; ?></td>
+                                                            <td><?php echo date('d-m-Y h:i A', strtotime($t['created_at'])); ?></td>
+                                                            <td><code><?php echo htmlspecialchars($t['payment_id']); ?></code></td>
+                                                            <td><small><?php echo htmlspecialchars($t['order_id']); ?></small></td>
+                                                            <td><strong>₹<?php echo number_format($t['amount'], 2); ?></strong></td>
+                                                            <td><span class="badge bg-navy"><?php echo strtoupper($t['method']); ?></span></td>
+                                                            <td><small><?php echo htmlspecialchars(!empty($t['vpa']) ? $t['vpa'] : (!empty($t['bank']) ? $t['bank'] : 'N/A')); ?></small></td>
+                                                            <td><span class="label label-success"><?php echo strtoupper($t['status']); ?></span></td>
+                                                            <td>
+                                                                <?php if ($t['is_signature_verified'] == 1) { ?>
+                                                                    <span class="label label-success"><i class="fa fa-check"></i> Verified</span>
+                                                                <?php } else { ?>
+                                                                    <span class="label label-default">N/A</span>
+                                                                <?php } ?>
+                                                            </td>
+                                                            <td class="text-right">
+                                                                <button type="button" class="btn btn-xs btn-default" onclick="viewTestPayload(<?php echo $t['id']; ?>)" title="View Raw Gateway Response">
+                                                                    <i class="fa fa-eye"></i> Response
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    <?php } } else { ?>
+                                                        <tr id="no-test-trans-row"><td colspan="10" class="text-center text-muted">No test transactions yet. Click "Pay Test Amount via Razorpay" above to run your first test!</td></tr>
+                                                    <?php } ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
 
                         </div>
 
@@ -888,6 +1023,8 @@
 
                             </form>
 
+
+
                         </div>
 
                         <!-- /.tab-pane -->
@@ -973,6 +1110,8 @@
                                 </div>
 
                             </form>
+
+
 
                         </div>
 
@@ -1072,6 +1211,8 @@
 
                             </form>
 
+
+
                         </div>
 
                          <div class="tab-pane " id="tab_11">
@@ -1170,6 +1311,8 @@
 
                             </form>
 
+
+
                         </div>
 
                         <div class="tab-pane " id="tab_12">
@@ -1263,6 +1406,8 @@
                                 </div>
 
                             </form>
+
+
 
                         </div>
 
@@ -1366,6 +1511,8 @@
 
                             </form>
 
+
+
                         </div>
 
                          <div class="tab-pane " id="tab_14">
@@ -1457,6 +1604,8 @@
                                 </div>
 
                             </form>
+
+
 
                         </div>
 
@@ -1552,6 +1701,8 @@
 
                             </form>
 
+
+
                         </div>
 
                          <div class="tab-pane <?php echo ($active_tab == 'atom') ? 'active' : ''; ?>" id="tab_16">
@@ -1645,6 +1796,8 @@
                                 </div>
 
                             </form>
+
+
 
                         </div>
 
@@ -3346,4 +3499,237 @@ function check_in_array($find, $array) {
         }
     });
 
+</script>
+
+<!-- Modal: View Test Payload -->
+<div class="modal fade" id="testPayloadModal" tabindex="-1" role="dialog" aria-labelledby="payloadModalTitle">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-navy">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#fff;"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="payloadModalTitle" style="color:#fff;"><i class="fa fa-code"></i> Razorpay Live Test - Decrypted Gateway Payload</h4>
+            </div>
+            <div class="modal-body" id="test-payload-modal-body">
+                <div class="text-center"><i class="fa fa-spinner fa-spin fa-2x"></i> Loading...</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+// Test 1: Fast API Connection Check
+$('#btn-ping-razorpay').on('click', function () {
+    var btn = $(this);
+    var box = $('#ping-result-box');
+    btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Checking...');
+    box.hide().html('');
+
+    $.ajax({
+        url: '<?php echo site_url("admin/paymentsettings/test_razorpay_connection"); ?>',
+        type: 'POST',
+        dataType: 'json',
+        success: function (res) {
+            btn.prop('disabled', false).html('<i class="fa fa-refresh"></i> Check Razorpay API Connection');
+            if (res.status === 'success') {
+                box.removeClass('alert-danger').addClass('alert alert-success').html(
+                    '<i class="fa fa-check-circle"></i> <strong>' + res.message + '</strong><br>' +
+                    '<small>Configured Key ID: <code>' + res.key_id + '</code></small>'
+                ).slideDown();
+            } else {
+                box.removeClass('alert-success').addClass('alert alert-danger').html(
+                    '<i class="fa fa-times-circle"></i> <strong>Error:</strong> ' + res.message
+                ).slideDown();
+            }
+        },
+        error: function () {
+            btn.prop('disabled', false).html('<i class="fa fa-refresh"></i> Check Razorpay API Connection');
+            box.removeClass('alert-success').addClass('alert alert-danger').html(
+                '<i class="fa fa-times-circle"></i> Server communication error. Please check your network or try again.'
+            ).slideDown();
+        }
+    });
+});
+
+// Test 2: Real ₹1 Live Payment Test
+$('#btn-start-test-payment').on('click', function () {
+    var btn = $(this);
+    var box = $('#test-payment-result-box');
+    var amount = parseFloat($('#test-pay-amount').val()) || 1.00;
+    var name = $('#test-pay-name').val() || 'Admin Test';
+
+    btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Initializing Order...');
+    box.hide().html('');
+
+    // Step 1: Create Order via server
+    $.ajax({
+        url: '<?php echo site_url("admin/paymentsettings/create_razorpay_test_order"); ?>',
+        type: 'POST',
+        dataType: 'json',
+        data: { amount: amount },
+        success: function (res) {
+            if (res.status !== 'success') {
+                btn.prop('disabled', false).html('<i class="fa fa-bolt"></i> Pay Test Amount via Razorpay');
+                box.removeClass('alert-success').addClass('alert alert-danger').html(
+                    '<i class="fa fa-times-circle"></i> <strong>Order Creation Failed:</strong> ' + res.message
+                ).slideDown();
+                return;
+            }
+
+            // Step 2: Open Razorpay Live Checkout
+            var options = {
+                "key": res.key_id,
+                "amount": res.amount,
+                "currency": res.currency,
+                "name": "CAG ERP Live Gateway Test",
+                "description": "Test Transaction: ₹" + res.display_amount + " (Verification)",
+                "order_id": res.order_id,
+                "handler": function (response) {
+                    btn.html('<i class="fa fa-spinner fa-spin"></i> Verifying Payment & Storing in DB...');
+                    
+                    // Step 3: Send back to backend for HMAC verification & DB storage
+                    $.ajax({
+                        url: '<?php echo site_url("admin/paymentsettings/verify_razorpay_test_payment"); ?>',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_signature: response.razorpay_signature,
+                            amount: amount,
+                            name: name
+                        },
+                        success: function (verifyRes) {
+                            btn.prop('disabled', false).html('<i class="fa fa-bolt"></i> Pay Test Amount via Razorpay');
+                            if (verifyRes.status === 'success') {
+                                box.removeClass('alert-danger').addClass('alert alert-success').html(
+                                    '<h4><i class="icon fa fa-check-circle"></i> ' + verifyRes.message + '</h4>' +
+                                    '<table class="table table-condensed" style="margin-bottom:0; background:rgba(255,255,255,0.7); color:#222;">' +
+                                    '<tr><td style="width:30%;"><strong>Payment ID:</strong></td><td><code>' + verifyRes.payment_id + '</code></td></tr>' +
+                                    '<tr><td><strong>Order ID:</strong></td><td><code>' + verifyRes.order_id + '</code></td></tr>' +
+                                    '<tr><td><strong>Amount Paid:</strong></td><td>₹' + verifyRes.amount + '</td></tr>' +
+                                    '<tr><td><strong>Payment Mode / Method:</strong></td><td>' + verifyRes.method + ' (' + verifyRes.bank_or_vpa + ')</td></tr>' +
+                                    '<tr><td><strong>Signature Verified:</strong></td><td><span class="label label-success"><i class="fa fa-check"></i> HMAC-SHA256 Match</span></td></tr>' +
+                                    '<tr><td><strong>Database Status:</strong></td><td><span class="label label-primary">Stored in gateway_test_transactions (ID: #' + verifyRes.test_id + ')</span></td></tr>' +
+                                    '</table>'
+                                ).slideDown();
+
+                                // Prepend new row to recent test table
+                                $('#no-test-trans-row').remove();
+                                var newRow = '<tr>' +
+                                    '<td>#' + verifyRes.test_id + '</td>' +
+                                    '<td>Just now</td>' +
+                                    '<td><code>' + verifyRes.payment_id + '</code></td>' +
+                                    '<td><small>' + verifyRes.order_id + '</small></td>' +
+                                    '<td><strong>₹' + verifyRes.amount + '</strong></td>' +
+                                    '<td><span class="badge bg-navy">' + verifyRes.method + '</span></td>' +
+                                    '<td><small>' + verifyRes.bank_or_vpa + '</small></td>' +
+                                    '<td><span class="label label-success">' + verifyRes.payment_status + '</span></td>' +
+                                    '<td><span class="label label-success"><i class="fa fa-check"></i> Verified</span></td>' +
+                                    '<td class="text-right">' +
+                                        '<button type="button" class="btn btn-xs btn-default" onclick="viewTestPayload(' + verifyRes.test_id + ')">' +
+                                            '<i class="fa fa-eye"></i> Response' +
+                                        '</button>' +
+                                    '</td>' +
+                                    '</tr>';
+                                $('#test-trans-tbody').prepend(newRow);
+                            } else {
+                                box.removeClass('alert-success').addClass('alert alert-danger').html(
+                                    '<i class="fa fa-times-circle"></i> <strong>Payment Verification Failed:</strong> ' + verifyRes.message
+                                ).slideDown();
+                            }
+                        },
+                        error: function () {
+                            btn.prop('disabled', false).html('<i class="fa fa-bolt"></i> Pay Test Amount via Razorpay');
+                            box.removeClass('alert-success').addClass('alert alert-danger').html(
+                                '<i class="fa fa-times-circle"></i> Error while communicating with verification endpoint.'
+                            ).slideDown();
+                        }
+                    });
+                },
+                "modal": {
+                    "ondismiss": function () {
+                        btn.prop('disabled', false).html('<i class="fa fa-bolt"></i> Pay Test Amount via Razorpay');
+                    }
+                },
+                "prefill": {
+                    "name": name,
+                    "email": "admin@cag.edu",
+                    "contact": "9999999999"
+                },
+                "theme": {
+                    "color": "#00a65a"
+                }
+            };
+
+            var rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (failResp) {
+                btn.prop('disabled', false).html('<i class="fa fa-bolt"></i> Pay Test Amount via Razorpay');
+                box.removeClass('alert-success').addClass('alert alert-danger').html(
+                    '<i class="fa fa-times-circle"></i> <strong>Payment Failed:</strong> ' + failResp.error.description +
+                    ' (Code: ' + failResp.error.code + ')'
+                ).slideDown();
+            });
+            rzp.open();
+        },
+        error: function () {
+            btn.prop('disabled', false).html('<i class="fa fa-bolt"></i> Pay Test Amount via Razorpay');
+            box.removeClass('alert-success').addClass('alert alert-danger').html(
+                '<i class="fa fa-times-circle"></i> Server error while creating order.'
+            ).slideDown();
+        }
+    });
+});
+
+/**
+ * View raw test transaction payload
+ */
+function viewTestPayload(id) {
+    $('#test-payload-modal-body').html('<div class="text-center"><i class="fa fa-spinner fa-spin fa-2x"></i> Loading...</div>');
+    $('#testPayloadModal').modal('show');
+
+    $.ajax({
+        url: '<?php echo site_url("admin/paymentsettings/get_test_transaction_detail"); ?>',
+        type: 'POST',
+        dataType: 'json',
+        data: { id: id },
+        success: function (res) {
+            if (res.status === 'success' && res.data) {
+                var d = res.data;
+                var html = '<table class="table table-bordered table-striped">' +
+                    '<tr><th style="width:30%;">Test ID:</th><td>#' + d.id + '</td></tr>' +
+                    '<tr><th>Payment ID:</th><td><code>' + d.payment_id + '</code></td></tr>' +
+                    '<tr><th>Order ID:</th><td><code>' + (d.order_id || 'N/A') + '</code></td></tr>' +
+                    '<tr><th>Amount Paid:</th><td><strong>₹' + parseFloat(d.amount).toFixed(2) + ' ' + d.currency + '</strong></td></tr>' +
+                    '<tr><th>Method / VPA / Bank:</th><td>' + d.method + ' (' + (d.vpa || d.bank || 'N/A') + ')</td></tr>' +
+                    '<tr><th>Date & Time:</th><td>' + d.created_at + '</td></tr>' +
+                    '<tr><th>Tested By:</th><td>' + (d.tested_by || 'Admin') + '</td></tr>' +
+                    '<tr><th>HMAC Signature Verified:</th><td>' + (d.is_signature_verified == 1 ? '<span class="label label-success"><i class="fa fa-check"></i> Valid</span>' : '<span class="label label-default">N/A</span>') + '</td></tr>' +
+                    '</table>';
+
+                if (d.raw_response) {
+                    try {
+                        var parsed = JSON.parse(d.raw_response);
+                        html += '<h4>Decrypted Live Razorpay Response</h4>' +
+                            '<pre style="max-height:280px; overflow-y:auto; background:#1e1e1e; color:#4ec9b0; font-size:12px;">' +
+                            JSON.stringify(parsed, null, 2) +
+                            '</pre>';
+                    } catch (e) {
+                        html += '<h4>Raw Gateway Payload</h4><pre style="max-height:200px; overflow-y:auto;">' + d.raw_response + '</pre>';
+                    }
+                }
+
+                $('#test-payload-modal-body').html(html);
+            } else {
+                $('#test-payload-modal-body').html('<div class="alert alert-danger">Transaction not found.</div>');
+            }
+        },
+        error: function () {
+            $('#test-payload-modal-body').html('<div class="alert alert-danger">Error loading details.</div>');
+        }
+    });
+}
 </script>
