@@ -539,4 +539,17 @@ class Onlinestudent_model extends MY_Model
             return 0;
         }
     }
+
+    /**
+     * Automatically synchronize paid status for any student who has a record in online_admission_payment.
+     * Runs in milliseconds on page load, completely eliminating any manual sync effort for admins.
+     */
+    public function autoSyncPaidStatus()
+    {
+        $sql = "UPDATE online_admissions o
+                INNER JOIN online_admission_payment p ON p.admission_id = o.id
+                SET o.paid_status = 1, o.form_status = 1
+                WHERE (o.paid_status = 0 OR o.paid_status IS NULL)";
+        $this->db->query($sql);
+    }
 }

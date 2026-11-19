@@ -28,6 +28,9 @@ class Onlinestudent extends Admin_Controller
             access_denied();
         }
 
+        // Auto-sync in background: Instantly marks any student with verified payment as Paid
+        $this->onlinestudent_model->autoSyncPaidStatus();
+
 
 //         echo "<pre>";
 // print_r($this->session->userdata());die;
@@ -392,6 +395,8 @@ class Onlinestudent extends Admin_Controller
 
     public function getstudentlist()
     {
+        // Auto-sync in background before generating DataTable JSON
+        $this->onlinestudent_model->autoSyncPaidStatus();
     
         $class             = $this->class_model->get();
         $data['classlist'] = $class;

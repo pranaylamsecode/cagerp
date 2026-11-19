@@ -62,6 +62,9 @@ class Paymenttransactions extends Admin_Controller
         $data['enquiry_payments']   = array();
 
         try {
+            // Background auto-sync before computing summary stats
+            $this->onlinestudent_model->autoSyncPaidStatus();
+
             $data['stats']              = $this->paymenttransaction_model->getSummaryStats();
             $data['admission_payments'] = $this->paymenttransaction_model->getOnlineAdmissionPayments($search, $date_from, $date_to, $status);
             $data['atom_transactions']  = $this->paymenttransaction_model->getAtomTransactions($search, $date_from, $date_to, $status);
