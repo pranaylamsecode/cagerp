@@ -44,6 +44,7 @@ class Onlinestudent extends Admin_Controller
         $this->session->set_userdata('sub_menu', 'onlinestudent');
         $data['title']       = 'Student List';
         $data['sch_setting'] = $this->sch_setting_detail;
+        $data['classlist']   = $this->class_model->get();
         $this->load->view('layout/header', $data);
         $this->load->view('admin/onlinestudent/studentList', $data);
         $this->load->view('layout/footer', $data);
@@ -397,17 +398,22 @@ class Onlinestudent extends Admin_Controller
     {
         // Auto-sync in background before generating DataTable JSON
         $this->onlinestudent_model->autoSyncPaidStatus();
+
+        $payment_status = $this->input->post('payment_status');
+        $form_status    = $this->input->post('form_status');
+        $filter_class   = $this->input->post('class_id');
     
         $class             = $this->class_model->get();
         $data['classlist'] = $class;
         $sch_setting       = $this->sch_setting_detail;
+        $carray            = array();
         if (!empty($data['classlist'])) {
             foreach ($data['classlist'] as $key => $value) {
                 $carray[] = $value['id'];
             }
         }
 
-        $student_result  = $this->onlinestudent_model->getstudentlist($carray, null);
+        $student_result  = $this->onlinestudent_model->getstudentlist($carray, null, $payment_status, $form_status, $filter_class);
         $m               = json_decode($student_result);
         $currency_symbol = $this->customlib->getSchoolCurrencyFormat();
         $dt_data         = array();

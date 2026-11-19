@@ -17,6 +17,56 @@
                         </div><!-- /.box-tools -->
                     </div><!-- /.box-header -->
                     <div class="box-body table-responsive">
+                        <!-- Filters for Payment Status, Form Status & Class -->
+                        <div class="well well-sm" style="background: #fdfdfe; border: 1px solid #d2d6de; border-left: 4px solid #3c8dbc; margin-bottom: 15px; border-radius: 3px;">
+                            <div class="row">
+                                <div class="col-md-3 col-sm-6 col-xs-12">
+                                    <label style="font-size: 12px; font-weight: 600; color: #333; margin-bottom: 4px;">
+                                        <i class="fa fa-credit-card text-primary"></i> Payment Status:
+                                    </label>
+                                    <select id="filter_payment_status" class="form-control input-sm" style="width: 100%;">
+                                        <option value="">All Payment Statuses</option>
+                                        <option value="paid">&#10004; Paid</option>
+                                        <option value="unpaid">&#10008; Unpaid</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3 col-sm-6 col-xs-12">
+                                    <label style="font-size: 12px; font-weight: 600; color: #333; margin-bottom: 4px;">
+                                        <i class="fa fa-file-text-o text-success"></i> Form Status:
+                                    </label>
+                                    <select id="filter_form_status" class="form-control input-sm" style="width: 100%;">
+                                        <option value="">All Form Statuses</option>
+                                        <option value="submitted">&#10004; Submitted</option>
+                                        <option value="not_submitted">&#10008; Not Submitted</option>
+                                    </select>
+                                </div>
+
+                                <?php if (!empty($classlist)) { ?>
+                                <div class="col-md-3 col-sm-6 col-xs-12">
+                                    <label style="font-size: 12px; font-weight: 600; color: #333; margin-bottom: 4px;">
+                                        <i class="fa fa-graduation-cap text-warning"></i> Class:
+                                    </label>
+                                    <select id="filter_class_id" class="form-control input-sm" style="width: 100%;">
+                                        <option value="">All Classes</option>
+                                        <?php foreach ($classlist as $c) { ?>
+                                            <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['class']); ?></option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+                                <?php } ?>
+
+                                <div class="col-md-3 col-sm-6 col-xs-12" style="margin-top: 22px;">
+                                    <button type="button" class="btn btn-primary btn-sm" id="btn-apply-filter" onclick="applyOnlineStudentFilter()">
+                                        <i class="fa fa-filter"></i> Filter
+                                    </button>
+                                    <button type="button" class="btn btn-default btn-sm" id="btn-reset-filter" onclick="resetOnlineStudentFilter()">
+                                        <i class="fa fa-undo"></i> Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mailbox-messages">
                             
                             <table class="table table-striped table-bordered table-hover student-list" data-export-title="<?php echo $this->lang->line('student')." ".$this->lang->line('list'); ?>">
@@ -80,12 +130,35 @@
 </div>
 
 <script>
-    ( function ( $ ) {
+function applyOnlineStudentFilter() {
+    var params = {
+        'payment_status': $('#filter_payment_status').val(),
+        'form_status': $('#filter_form_status').val(),
+        'class_id': $('#filter_class_id').val()
+    };
+    initDatatable('student-list', 'admin/onlinestudent/getstudentlist', params, [], 100);
+}
+
+function resetOnlineStudentFilter() {
+    $('#filter_payment_status').val('');
+    $('#filter_form_status').val('');
+    if ($('#filter_class_id').length) {
+        $('#filter_class_id').val('');
+    }
+    applyOnlineStudentFilter();
+}
+
+(function ($) {
     'use strict';
     $(document).ready(function () {
-        initDatatable('student-list','admin/onlinestudent/getstudentlist',[],[],100);
+        applyOnlineStudentFilter();
+
+        // Auto-filter immediately when any dropdown changes
+        $('#filter_payment_status, #filter_form_status, #filter_class_id').on('change', function () {
+            applyOnlineStudentFilter();
+        });
     });
-} ( jQuery ) )
+}(jQuery));
 
 function viewAdmissionPayment(id) {
     $('#admission-modal-body').html('<div class="text-center"><i class="fa fa-spinner fa-spin fa-2x"></i> Loading...</div>');

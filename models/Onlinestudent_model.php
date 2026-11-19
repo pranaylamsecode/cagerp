@@ -63,18 +63,35 @@ class Onlinestudent_model extends MY_Model
         }
     }
 
-    public function getstudentlist($carray = null, $id = null)
+    public function getstudentlist($carray = null, $id = null, $payment_status = null, $form_status = null, $class_id = null)
     {
-
-        if ($carray != null) {
+        if (!empty($class_id)) {
+            $this->datatables->where('classes.id', $class_id);
+        } elseif ($carray != null) {
             $this->datatables->where_in('classes.id', $carray);
         }
 
         if ($id != null) {
             $this->datatables->where('online_admissions.id', $id);
         } else {
-
             $this->datatables->orderable('online_admissions.id', 'desc');
+        }
+
+        if (!empty($payment_status)) {
+            if ($payment_status == 'paid') {
+                $this->datatables->where('(online_admissions.paid_status = 1 OR adm_pay.transaction_id IS NOT NULL)');
+            } elseif ($payment_status == 'unpaid') {
+                $this->datatables->where('(online_admissions.paid_status = 0 OR online_admissions.paid_status IS NULL)');
+                $this->datatables->where('adm_pay.transaction_id IS NULL');
+            }
+        }
+
+        if (!empty($form_status)) {
+            if ($form_status == 'submitted') {
+                $this->datatables->where('online_admissions.form_status', 1);
+            } elseif ($form_status == 'not_submitted') {
+                $this->datatables->where('(online_admissions.form_status = 0 OR online_admissions.form_status IS NULL)');
+            }
         }
 
         $this->datatables
